@@ -103,7 +103,7 @@ def collect_metrics(env, strategy, servers_patched, servers_being_emptied, migra
     # Gathering server-related metrics
     # Occupation rate
     aggregated_occupation_rate = sum(sv.occupation_rate() for sv in Server.all())
-    output['metrics']['occupation_rate'] = aggregated_occupation_rate / Server.count()
+    output['metrics']['occupation_rate'] = aggregated_occupation_rate / len(Server.used_servers())
 
     # Consolidation rate
     output['metrics']['consolidation_rate'] = Server.consolidation_rate()
@@ -121,6 +121,9 @@ def show_metrics(dataset, maintenance_data, output_file=None):
 
     Parameters
     ==========
+    dataset : String
+        Name of the used dataset
+
     maintenance_data : Dictionary
         List of metrics collected during the current maintenance step
 
@@ -198,7 +201,6 @@ def show_metrics(dataset, maintenance_data, output_file=None):
     if output_file:
 
         with open(output_file, mode='w') as csv_file:
-            # employee_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             output_writer = csv.writer(csv_file, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
             # Creating header
@@ -206,6 +208,7 @@ def show_metrics(dataset, maintenance_data, output_file=None):
                 'Overall Vulnerability Surface', 'VM Migrations', 'Time Spent With Migrations',
                 'Avg. Migration Duration', 'Avg. Occupation Rate', 'Avg. Consolidation Rate'])
 
+            # Creating body
             output_writer.writerow([dataset, maintenance_data[0]["strategy"], maintenance_data[-1]["simulation_steps"],
                 vulnerability_surface_metric, total_vm_migrations, time_spent_with_migrations,
                 avg_migration_duration, avg_occupation_rate, avg_consolidation_rate])

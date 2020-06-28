@@ -96,7 +96,7 @@ class Server(ObjectCollection):
 
         Returns
         =======
-        Float
+        occupation_rate : Float
             Occupation rate of a server
         """
 
@@ -104,22 +104,39 @@ class Server(ObjectCollection):
         memory_usage_percentage = self.memory_demand * 100 / self.memory_capacity
         disk_usage_percentage = self.disk_demand * 100 / self.disk_capacity
 
-        return((cpu_usage_percentage + memory_usage_percentage + disk_usage_percentage) / 3)
+        occupation_rate = (cpu_usage_percentage + memory_usage_percentage + disk_usage_percentage) / 3
+
+        return(occupation_rate)
 
     @classmethod
-    def consolidation_rate(self):
+    def used_servers(cls):
+        """ Gets the list of used servers (i.e., servers that are hosting VMs).
+
+        Returns
+        =======
+        used_servers : List
+            List of servers hosting VMs
+        """
+
+        used_servers = [sv for sv in Server.all() if len(sv.virtual_machines) > 0]
+
+        return(used_servers)
+
+    @classmethod
+    def consolidation_rate(cls):
         """ Calculates the consolidation rate of the group of servers.
 
         Returns
         =======
-        Float
+        consolidation_rate : Float
             Consolidation rate of the group of servers
         """
 
-        used_servers = sum(1 for sv in Server.all() if len(sv.virtual_machines) > 0)
+        used_servers = len(Server.used_servers())
 
+        consolidation_rate = 100 - (used_servers * 100 / Server.count())
 
-        return(used_servers * 100 / Server.count())
+        return(consolidation_rate)
 
     @classmethod
     def nonupdated(cls):
