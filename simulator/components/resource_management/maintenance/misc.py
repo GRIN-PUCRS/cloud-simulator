@@ -115,7 +115,7 @@ def collect_metrics(env, strategy, servers_patched, servers_being_emptied, migra
 
     return(output)
 
-def show_metrics(dataset, maintenance_data, output_file=None):
+def show_metrics(dataset, maintenance_data, output_file=None, verbose=False):
     """ Presents information and metrics of the performed maintenance
     and optionally stores these results into an output CSV file.
 
@@ -147,34 +147,38 @@ def show_metrics(dataset, maintenance_data, output_file=None):
 
     # Walking through each maintenance iteration
     for i, output in enumerate(maintenance_data):
-        print(f'\n\n=== Iteration {i+1}. Passed Simulation Time: {output["simulation_steps"]} ===')
 
-        if i > 0:
-            iter_duration = output["simulation_steps"] - maintenance_data[i-1]["simulation_steps"]
-            print(f'Duration: {iter_duration}')
-        else:
-            iter_duration = output["simulation_steps"]
-            print(f'Duration: {iter_duration}')
+        # Only shows specific information of each maintenance
+        # iteration if the verbose flag is set to true
+        if verbose == True:
+            print(f'\n\n=== Iteration {i+1}. Passed Simulation Time: {output["simulation_steps"]} ===')
+
+            if i > 0:
+                iter_duration = output["simulation_steps"] - maintenance_data[i-1]["simulation_steps"]
+                print(f'Duration: {iter_duration}')
+            else:
+                iter_duration = output["simulation_steps"]
+                print(f'Duration: {iter_duration}')
 
 
-        print(f'Updated Servers: {output["metrics"]["updated_servers"]}')
-        print(f'Non-Updated Servers: {output["metrics"]["nonupdated_servers"]}\n')
+            print(f'Updated Servers: {output["metrics"]["updated_servers"]}')
+            print(f'Non-Updated Servers: {output["metrics"]["nonupdated_servers"]}\n')
 
 
-        print(f'Servers updated: {output["metrics"]["servers_being_updated"]}')
-        print(f'Servers emptied: {output["metrics"]["servers_being_emptied"]}\n')
-        
-        print(f'Occupation Rate: {output["metrics"]["occupation_rate"]}')
-        print(f'Consolidation Rate: {output["metrics"]["consolidation_rate"]}\n')
+            print(f'Servers updated: {output["metrics"]["servers_being_updated"]}')
+            print(f'Servers emptied: {output["metrics"]["servers_being_emptied"]}\n')
+            
+            print(f'Occupation Rate: {output["metrics"]["occupation_rate"]}')
+            print(f'Consolidation Rate: {output["metrics"]["consolidation_rate"]}\n')
 
-        print(f'Migrations: {output["metrics"]["vm_migrations"]}')
-        if output["metrics"]["vm_migrations"] > 0:
-            print(f'   Time spent with migrations: {output["metrics"]["migrations_duration"]}')
-            print(f'   Average migration duration: {output["metrics"]["avg_migration_duration"]}')
-            print(f'   Longer migration: {output["metrics"]["longer_migration"]}')
-            print(f'   Shorter migration: {output["metrics"]["shorter_migration"]}\n')
+            print(f'Migrations: {output["metrics"]["vm_migrations"]}')
+            if output["metrics"]["vm_migrations"] > 0:
+                print(f'   Time spent with migrations: {output["metrics"]["migrations_duration"]}')
+                print(f'   Average migration duration: {output["metrics"]["avg_migration_duration"]}')
+                print(f'   Longer migration: {output["metrics"]["longer_migration"]}')
+                print(f'   Shorter migration: {output["metrics"]["shorter_migration"]}\n')
 
-        print(f'Vulnerability Surface in this step: {output["metrics"]["vulnerability_surface"]}')
+            print(f'Vulnerability Surface in this step: {output["metrics"]["vulnerability_surface"]}')
 
         # Updating generalistic variables with data from the current maintenance step
         time_spent_with_migrations += output["metrics"]["migrations_duration"]
@@ -188,7 +192,7 @@ def show_metrics(dataset, maintenance_data, output_file=None):
     avg_occupation_rate /= len(maintenance_data)
     avg_consolidation_rate /= len(maintenance_data)
 
-    print('\n\n=========')
+    print('\n=========')
     print(f'Maintenance Duration: {maintenance_data[-1]["simulation_steps"]}')
     print(f'Overall Vulnerability Surface: {vulnerability_surface_metric}')
     print(f'VM Migrations: {total_vm_migrations}')

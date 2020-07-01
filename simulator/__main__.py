@@ -36,7 +36,7 @@ def main():
     env.run()
 
     # Prints out the maintenance results and optionally stores metrics into an output CSV file
-    show_metrics(dataset, maintenance_data, output_file='results.csv')
+    show_metrics(dataset, maintenance_data, output_file=None, verbose=True)
 
 if __name__ == '__main__':
     main()
