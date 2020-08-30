@@ -60,6 +60,20 @@ class Server(ObjectCollection):
             self.memory_demand += vm.memory_demand
             self.disk_demand += vm.disk_demand
 
+    def overall_demand(self):
+        """ Calculates the overall server demand using the geometric mean.
+
+        Returns
+        =======
+        demand : float
+            Overall server demand
+        """
+
+        demand = (self.cpu_demand * self.memory_demand * self.disk_demand)**(1/3)
+
+        return(demand)
+
+
     def has_capacity_to_host(self, vm):
         """ Checks if whether a server has resources or not to host a VM.
 

@@ -8,15 +8,18 @@ from simulator.components.resource_management.maintenance.strategies.vulnerabili
 from simulator.components.resource_management.maintenance.strategies.best_fit import best_fit
 from simulator.components.resource_management.maintenance.strategies.worst_fit import worst_fit
 from simulator.components.resource_management.maintenance.strategies.first_fit import first_fit
+from simulator.components.resource_management.maintenance.strategies.consolidation_aware import consolidation_aware
+from simulator.components.resource_management.maintenance.strategies.delay_aware import delay_aware
 from simulator.components.resource_management.maintenance.misc import show_metrics
 
 def main():
     # Loading the dataset from a JSON file. Currently available options:
     # 'data/input.json'
+    # 'data/paper_example.json'
     # 'data/dataset_occupation-25.json'
     # 'data/dataset_occupation-50.json'
     # 'data/dataset_occupation-75.json'
-    dataset = 'data/dataset_occupation-25.json'
+    dataset = 'data/paper_example.json'
     load_dataset(dataset, initial_placement=True)
 
     # Maintenance data to be gathered during the simulation
@@ -29,7 +32,12 @@ def main():
     # i) best_fit
     # ii) first_fit
     # iii) worst_fit
-    # iv) vulnerability_surface
+    # iv) consolidation_aware
+    # v) delay_aware
+    # vi) vulnerability_surface
+
+    # env.process(delay_aware(env, maintenance_data))
+    # env.process(consolidation_aware(env, maintenance_data))
     env.process(vulnerability_surface(env, maintenance_data))
 
     # Starts the simulation

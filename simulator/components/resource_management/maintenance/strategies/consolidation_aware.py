@@ -3,17 +3,18 @@ from simulator.components.application.virtual_machine import VirtualMachine
 from simulator.components.resource_management.maintenance.misc import server_update, collect_metrics
 import simulator.misc.constants as constants
 
-def best_fit(env, maintenance_data):
+def consolidation_aware(env, maintenance_data):
     """
-    Best-Fit like maintenance strategy (presented by Severo et al. 2020)
-    ====================================================================
+    Consolidation-Aware maintenance strategy (presented by Severo et al. 2020)
+    ==========================================================================
     Note: We use the term "empty" to refer to servers that are not hosting VMs.
 
     The maintenance process is divided in two tasks:
     (i) Patching empty servers (lines 29-36)
     (ii) Migrating VMs to empty more servers (lines 40-77)
 
-    When choosing which servers will host the VMs, this strategy uses the Best-Fit heuristic.
+    When choosing which servers will host the VMs, this strategy focuses on
+    migrating as many VMs as servers not being "emptied" can host.
 
     Parameters
     ==========
@@ -41,6 +42,7 @@ def best_fit(env, maintenance_data):
 
         # Getting the list of servers that still need to receive the patch
         servers_to_empty = Server.nonupdated()
+        
         migrations_data = [] # Stores data on the migrations performed to allow future analysis
 
         for server in servers_to_empty:
@@ -55,12 +57,11 @@ def best_fit(env, maintenance_data):
 
                 vm = server.virtual_machines[0]
 
-                # Sorting servers (bins) to align with Best-Fit's idea,
-                # which is prioritizing servers with less space remaining
+                # Sorting servers (bins), prioritizing updated servers
                 candidate_servers = sorted(candidate_servers,
-                    key=lambda cand: (-cand.cpu_demand, -cand.memory_demand, -cand.disk_demand))
+                    key=lambda cand_server: -cand_server.updated)
 
-                # Migrating VMs using the Best-Fit heuristic
+                # Migrating VMs using the First-Fit heuristic adopted by the Consolidation-Aware strategy
                 for cand_server in candidate_servers:
                     servers_checked += 1
                     if cand_server.has_capacity_to_host(vm):
@@ -77,5 +78,5 @@ def best_fit(env, maintenance_data):
                 servers_being_emptied.append(server)
 
         # Collecting metrics gathered in the current maintenance iteration (i.e., outer while loop iteration)
-        maintenance_data.append(collect_metrics(env, 'Best-Fit', servers_to_patch,
+        maintenance_data.append(collect_metrics(env, 'Consolidation Aware', servers_to_patch,
             servers_being_emptied, migrations_data))
