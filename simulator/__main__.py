@@ -19,7 +19,7 @@ def main():
     # 'data/dataset_occupation-25.json'
     # 'data/dataset_occupation-50.json'
     # 'data/dataset_occupation-75.json'
-    dataset = 'data/paper_example.json'
+    dataset = 'data/dataset_occupation-25.json'
     load_dataset(dataset, initial_placement=True)
 
     # Maintenance data to be gathered during the simulation
