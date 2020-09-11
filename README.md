@@ -61,7 +61,7 @@ pip3 install -r requirements.txt
 To run the simulator, we can execute the following command from the simulator's root directory:
 
 ```{bash}
-python3 -B -m cloud-simulador
+python3 -B -m simulator
 ```
 
 To test different scenarios, we can modify the `main.py` file, choosing different input files (dataset = 'data/YOUR_INPUT_DATA.json') or different strategies (env.process(YOUR_STRATEGY(env, maintenance_data))).
