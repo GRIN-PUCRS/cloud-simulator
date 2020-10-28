@@ -216,12 +216,14 @@ class Server(ObjectCollection):
         """
 
         vms_allocated = 0
-
+        def delta(x,y):
+            return abs(x-y)
         # Verifying if all VMs could be hosted by the list of servers
         for vm in virtual_machines:
-            # Sorting servers according to their demand (descending)
+            
+            # Sorting servers according to their current capacity (descending)
             servers = sorted(servers, key=lambda sv:
-                (-sv.cpu_demand, -sv.memory_demand, -sv.disk_demand))
+                (-delta(sv.cpu_demand, sv.cpu_capacity), -delta(sv.memory_demand, sv.memory_capacity), -delta(sv.disk_demand, sv.disk_capacity)))
 
             for server in servers:
                 if server.has_capacity_to_host(vm):
