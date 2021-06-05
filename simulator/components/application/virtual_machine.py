@@ -1,14 +1,22 @@
-from simulator.misc.object_collection import ObjectCollection
+# General-purpose simulator modules
+from simulator.components.misc.object_collection import ObjectCollection
 import simulator.misc.constants as constants
 
+
 class VirtualMachine(ObjectCollection):
+    """ This class allows the creation of virtual machine (VM) objects.
+    """
+
     instances = []
 
-    def __init__(self, cpu, memory, disk):
-        """ Initializes the virtual machine (VM).
+    def __init__(self, id, cpu, memory, disk):
+        """ This method creates a VM object.
 
         Parameters
         ==========
+        id : int
+            Unique identifier
+
         cpu : int
             CPU demand of the VM
 
@@ -19,22 +27,59 @@ class VirtualMachine(ObjectCollection):
             Disk demand of the VM
         """
 
-        # Auto incremented ID
-        self.id = VirtualMachine.count() + 1
+        # Unique identifier
+        self.id = id
         
-        # Demand
+        # VM demand
         self.cpu_demand = cpu
         self.memory_demand = memory
         self.disk_demand = disk
 
-        # Variable that denotes which server hosts the VM
+        # Server that hosts the VM
         self.server = None
+
+        # Helper list that allows us to keep track of all VM migrations
+        self.migrations = []
+
+        # Network topology
+        self.topology = None
+
+        # Simulation environment
+        self.simulation_environment = None
+
 
         # Adding the new object to the list of instances of its class
         VirtualMachine.instances.append(self)
 
+
+    def __str__(self):
+        return(f'VM_{self.id}')
+
+
+    def __repr__(self):
+        return(f'VM_{self.id}')
+
+
+    def demand(self):
+        """ Computes the overall VM demand. We use the geometric mean as we compute
+        demand attributes differently. More specifically, we represent 'cpu_demand' as
+        means of number of CPU cores, while we represent 'memory_demand' and 'disk_demand'
+        as gigabytes.
+
+        Returns
+        =======
+        demand : Float
+            Overall VM's demand
+        """
+
+        # Computing VM's overall demand
+        demand = (self.cpu_demand * self.memory_demand * self.disk_demand) ** (1/3)
+
+        return(demand)
+
+
     def migration_time(self):
-        """ Migration equation presented by Severo et al. 2020. It calculates the
+        """ Migration equation presented by Severo et al. that computes the
         migration duration. We multiply memory and disk demands by 1024 to convert
         these values from gigabytes to megabytes.
 
@@ -43,20 +88,17 @@ class VirtualMachine(ObjectCollection):
         migration_time : int
             Amount of time needed to migrate a VM through the network to another host
         """
-
-        migration_time = int(constants.SAVE_TIME + ((self.memory_demand * 1024 +
-            self.disk_demand * 1024) / constants.NETWORK_BW) + constants.RESTORE_TIME)
+        network_delay = (self.memory_demand * 1024 + self.disk_demand * 1024) / constants.NETWORK_BW
+        migration_time = int(constants.SAVE_TIME + network_delay + constants.RESTORE_TIME)
 
         return(migration_time)
 
-    def migrate(self, env, destination_server):
-        """ Migrates a VM to a destination host.
+
+    def migrate(self, destination_server):
+        """ Migrates the VM to a destination host.
         
         Parameters
         ==========
-        env : SimPy.Environment
-            Used to quantity the amount of simulation time spent by the migration
-
         destination_serer : Server
             Server object to which the VM will be migrated
         """
@@ -81,8 +123,9 @@ class VirtualMachine(ObjectCollection):
         # Gathering the migration time for the VM
         migration_time = self.migration_time()
 
-        yield env.timeout(migration_time)
-        return(migration_time)
+        # Storing migration metadata to allow post-simulation analysis
+        self.migrations.append({'maintenance_step': self.simulation_environment.maintenance_step,
+            'duration': migration_time, 'origin': origin_server,
+            'destination': destination_server})
 
-    def __str__(self):
-        return(f'VM_{self.id}')
+        return(migration_time)

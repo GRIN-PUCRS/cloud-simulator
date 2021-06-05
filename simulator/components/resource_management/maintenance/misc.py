@@ -3,19 +3,6 @@ import csv
 from simulator.components.infrastructure.server import Server
 from simulator.components.application.virtual_machine import VirtualMachine
 
-def server_update(env, patching_time):
-    """ Quantifies the number of simulation steps used to update a server.
-
-    Parameters
-    ==========
-    env : SimPy.Environment
-        Used to quantity the amount of simulation time spent by the migration
-
-    patching_time : Integer
-        Defines the amount of time it takes to patch a server
-    """
-
-    yield env.timeout(patching_time)
 
 def collect_metrics(env, strategy, servers_patched, servers_being_emptied, migrations_data):
     """ Gather metrics from the current maintenance step.
@@ -72,6 +59,12 @@ def collect_metrics(env, strategy, servers_patched, servers_being_emptied, migra
     # Number of updated and nonupdated servers
     output['metrics']['updated_servers'] = len(Server.updated())
     output['metrics']['nonupdated_servers'] = len(Server.nonupdated())
+
+    # Number of safeguarded VMs
+    safeguarded_vms = 0
+    for server in Server.updated():
+        safeguarded_vms += len(server.virtual_machines)
+    output['metrics']['safeguarded_vms'] = safeguarded_vms
 
     # Vulnerability Surface (Severo et al. 2020) = Number of non-updated servers * Elapsed time
     output['metrics']['vulnerability_surface'] = env.now * output['metrics']['nonupdated_servers']
@@ -161,12 +154,13 @@ def show_metrics(dataset, maintenance_data, output_file=None, verbose=False):
                 print(f'Duration: {iter_duration}')
 
 
-            print(f'Updated Servers: {output["metrics"]["updated_servers"]}')
-            print(f'Non-Updated Servers: {output["metrics"]["nonupdated_servers"]}\n')
+            print(f'Safeguarded Servers: {output["metrics"]["updated_servers"]}')
+            print(f'Vulnerable Servers: {output["metrics"]["nonupdated_servers"]}')
+            print(f'Safeguarded VMs: {output["metrics"]["safeguarded_vms"]}\n')
 
 
-            print(f'Servers updated: {output["metrics"]["servers_being_updated"]}')
-            print(f'Servers emptied: {output["metrics"]["servers_being_emptied"]}\n')
+            print(f'Servers updated in this step: {output["metrics"]["servers_being_updated"]}')
+            print(f'Servers emptied in this step: {output["metrics"]["servers_being_emptied"]}\n')
             
             print(f'Occupation Rate: {output["metrics"]["occupation_rate"]}')
             print(f'Consolidation Rate: {output["metrics"]["consolidation_rate"]}\n')
@@ -193,6 +187,8 @@ def show_metrics(dataset, maintenance_data, output_file=None, verbose=False):
     avg_consolidation_rate /= len(maintenance_data)
 
     print('\n=========')
+    print(f'Dataset: "{dataset}"')
+    print(f'Maintenance Strategy: {maintenance_data[0]["strategy"]}\n')
     print(f'Maintenance Duration: {maintenance_data[-1]["simulation_steps"]}')
     print(f'Overall Vulnerability Surface: {vulnerability_surface_metric}')
     print(f'VM Migrations: {total_vm_migrations}')

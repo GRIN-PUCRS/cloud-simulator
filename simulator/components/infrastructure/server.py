@@ -1,14 +1,22 @@
-from simulator.misc.object_collection import ObjectCollection
+# General-purpose simulator modules
+from simulator.components.misc.object_collection import ObjectCollection
 import simulator.misc.constants as constants
 
+
 class Server(ObjectCollection):
+    """ This class allows the creation of server objects.
+    """
+
     instances = []
 
-    def __init__(self, cpu, memory, disk):
-        """ Initializes the server.
+    def __init__(self, id, cpu, memory, disk, updated):
+        """ This method creates a VM object.
 
         Parameters
         ==========
+        id : int
+            Unique identifier
+
         cpu : int
             CPU capacity of the server
 
@@ -17,10 +25,13 @@ class Server(ObjectCollection):
 
         disk : int
             Disk capacity of the server
+
+        updated : boolean
+            Initial update status
         """
 
-        # Auto incremented ID
-        self.id = Server.count() + 1
+        # Unique identifier
+        self.id = id
         
         # Capacity
         self.cpu_capacity = cpu
@@ -32,23 +43,91 @@ class Server(ObjectCollection):
         self.memory_demand = 0
         self.disk_demand = 0
 
-        # Rack in which the server is located
-        self.rack = None
-
-        # List used to store the hosted virtual machines
+        # List hosted virtual machines
         self.virtual_machines = []
         
         # Server update status
-        self.updated = False
+        self.updated = updated
+        self.update_step = None
+
+        # Server patch specs
+        self.patch_duration = 0
+        self.sanity_check_duration = 0
+
+        # Network topology
+        self.topology = None
+
+        # Simulation environment
+        self.simulation_environment = None
 
         # Adding the new object to the list of instances of its class
         Server.instances.append(self)
 
-    def __str__(self):
-        return(f'SV_{self.id}')
 
-    def calculate_demand(self):
-        """ Calculates the demand of a server based on the list of VMs it hosts.
+    def __str__(self):
+        return(f'Server_{self.id}')
+
+
+    def __repr__(self):
+        return(f'Server_{self.id}')
+
+
+    def update(self):
+        """ Updates the server.
+
+        Returns
+        =======
+        maintenance_duration : int
+            Server's maintenance duration
+        """
+
+        self.updated = True
+        self.update_step = self.simulation_environment.maintenance_step
+
+        return(self.maintenance_duration())
+
+
+    def capacity(self):
+        """ Computes the overall server capacity. We use the geometric mean as we compute
+        capacity attributes differently. More specifically, we represent 'cpu_capacity' as
+        means of number of CPU cores, while we represent 'memory_capacity' and 'disk_capacity'
+        as gigabytes.
+
+        Returns
+        =======
+        capacity : int
+            Overall server's capacity
+        """
+
+        # Computing server's overall capacity
+        overall_capacity = (self.cpu_capacity * self.memory_capacity * self.disk_capacity) ** (1/3)
+
+        return(overall_capacity)
+
+
+    def demand(self):
+        """ Computes the overall server demand. We use the geometric mean as we compute
+        demand attributes differently. More specifically, we represent 'cpu_demand' as
+        means of number of CPU cores, while we represent 'memory_demand' and 'disk_demand'
+        as gigabytes.
+
+        Returns
+        =======
+        demand : int
+            Overall server's demand
+        """
+
+        # Computing server's demand
+        self.compute_demand()
+
+        # Computing server's overall demand
+        overall_demand = (self.cpu_demand * self.memory_demand * self.disk_demand) ** (1/3)
+
+        return(overall_demand)
+
+
+    def compute_demand(self):
+        """ Computes the server's demand based on the list of VMs it hosts.
         """
 
         self.cpu_demand = 0
@@ -60,53 +139,66 @@ class Server(ObjectCollection):
             self.memory_demand += vm.memory_demand
             self.disk_demand += vm.disk_demand
 
-    def overall_demand(self):
-        """ Calculates the overall server demand using the geometric mean.
-
-        Returns
-        =======
-        demand : float
-            Overall server demand
-        """
-
-        demand = (self.cpu_demand * self.memory_demand * self.disk_demand)**(1/3)
-
-        return(demand)
-
 
     def has_capacity_to_host(self, vm):
         """ Checks if whether a server has resources or not to host a VM.
 
+        Parameters
+        ==========
+        vm : VirtualMachine
+            Virtual machine we want to know if the server has capacity to host
+
         Returns
         =======
         True OR False
-            The response that tells us if a given server has resources to host a VM
+            Answer that tells us if the server has resources to host the virtual machine
         """
+
+        # Updating server's demand
+        self.compute_demand()
 
         return(self.cpu_demand + vm.cpu_demand <= self.cpu_capacity and
             self.memory_demand + vm.memory_demand <= self.memory_capacity and
             self.disk_demand + vm.disk_demand <= self.disk_capacity)
 
-    def update_cost(self):
-        """ Update cost equation defined by Severo et al. 2020. The longer it takes
-        to migrate all the VMs of a server, the higher will be its update cost score.
+
+    def drain_duration(self):
+        """ Calculates the time needed to empty the server.
 
         Returns
         =======
-        update_cost : int
-            Update cost of a server (based on the migration cost of its VMs)
+        drain_duration : itn
+            Time needed to empty the server
         """
 
-        update_cost = 0
-
+        # Calculating the amount of time needed to empty the server
+        drain_duration = 0
         for vm in self.virtual_machines:
-            # Gathering the migration time for the VM
-            update_cost += vm.migration_time()
+            # Gathering the migration time for each VM hosted on the server
+            drain_duration += vm.migration_time()
 
-        return(update_cost)
+        return(drain_duration)
+
+
+    def maintenance_duration(self):
+        """ Patch duration scheme defined by Severo et al. In addition to the
+        patching and sanity checking durations, it considers the amount of time
+        it takes to empty the server.
+
+        Returns
+        =======
+        patch_duration : int
+            Time it takes to maintenance the server
+        """
+
+        # Calculating the server's maintenance duration
+        maintenance_duration = self.drain_duration() + self.patch_duration + self.sanity_check_duration
+
+        return(maintenance_duration)
+
 
     def occupation_rate(self):
-        """ Calculates the occupation rate of a server.
+        """ Computes the occupation rate of a server.
 
         Returns
         =======
@@ -114,13 +206,19 @@ class Server(ObjectCollection):
             Occupation rate of a server
         """
 
+        # Updating server's demand
+        self.compute_demand()
+
+        # Gathering current resource usage (in percent)
         cpu_usage_percentage = self.cpu_demand * 100 / self.cpu_capacity
         memory_usage_percentage = self.memory_demand * 100 / self.memory_capacity
         disk_usage_percentage = self.disk_demand * 100 / self.disk_capacity
 
+        # Computing server's occupation rate
         occupation_rate = (cpu_usage_percentage + memory_usage_percentage + disk_usage_percentage) / 3
 
         return(occupation_rate)
+
 
     @classmethod
     def used_servers(cls):
@@ -136,13 +234,14 @@ class Server(ObjectCollection):
 
         return(used_servers)
 
+
     @classmethod
     def consolidation_rate(cls):
-        """ Calculates the consolidation rate of the group of servers.
+        """ Computes the consolidation rate of the group of servers.
 
         Returns
         =======
-        consolidation_rate : Float
+        consolidation_rate : float
             Consolidation rate of the group of servers
         """
 
@@ -151,6 +250,7 @@ class Server(ObjectCollection):
         consolidation_rate = 100 - (used_servers * 100 / Server.count())
 
         return(consolidation_rate)
+
 
     @classmethod
     def nonupdated(cls):
@@ -164,6 +264,7 @@ class Server(ObjectCollection):
 
         return([sv for sv in Server.all() if sv.updated == False])
 
+
     @classmethod
     def updated(cls):
         """ Gathers the list of servers that already received the patch.
@@ -176,12 +277,13 @@ class Server(ObjectCollection):
 
         return([sv for sv in Server.all() if sv.updated == True])
     
+
     @classmethod
     def ready_to_patch(cls):
         """ Gathers the list of servers ready to be patched. This decision depends on
         specific maintenance demands. By default, to be considered ready for maintenance,
         a server must respect two conditions:
-            i) It must be non-updated
+            i) It must be nonupdated
             ii) It must be empty (i.e., not hosting any VM)
 
         Returns
@@ -194,6 +296,7 @@ class Server(ObjectCollection):
             if len(server.virtual_machines) == 0]
 
         return(servers_to_update)
+
 
     @classmethod
     def can_host_vms(cls, servers, virtual_machines):
@@ -217,14 +320,15 @@ class Server(ObjectCollection):
 
         vms_allocated = 0
 
+        virtual_machines = sorted(virtual_machines, key=lambda vm: -vm.demand())
+
         # Verifying if all VMs could be hosted by the list of servers
         for vm in virtual_machines:
             # Sorting servers according to their demand (descending)
-            servers = sorted(servers, key=lambda sv:
-                (-sv.cpu_demand, -sv.memory_demand, -sv.disk_demand))
+            servers = sorted(servers, key=lambda sv: -sv.occupation_rate())
 
             for server in servers:
-                if server.has_capacity_to_host(vm):
+                if vm.server != server and server.has_capacity_to_host(vm):
                     server.cpu_demand += vm.cpu_demand
                     server.memory_demand += vm.memory_demand
                     server.disk_demand += vm.disk_demand
@@ -232,8 +336,8 @@ class Server(ObjectCollection):
                     vms_allocated += 1
                     break
         
-        # Recalculating server demand
+        # Recomputing servers demand
         for server in servers:
-            server.calculate_demand()
+            server.compute_demand()
 
         return(len(virtual_machines) == vms_allocated)

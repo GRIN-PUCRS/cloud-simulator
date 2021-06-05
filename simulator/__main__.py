@@ -1,50 +1,33 @@
-import sys
-import simpy
+# USAGE EXAMPLE: python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="salus" -o="salus"
+# Python libraries
+import random
+import argparse
 
-from simulator.components.infrastructure.server import Server
-from simulator.components.application.virtual_machine import VirtualMachine
-from simulator.misc.load_dataset import load_dataset
-from simulator.components.resource_management.maintenance.strategies.vulnerability_surface import vulnerability_surface
-from simulator.components.resource_management.maintenance.strategies.best_fit import best_fit
-from simulator.components.resource_management.maintenance.strategies.worst_fit import worst_fit
-from simulator.components.resource_management.maintenance.strategies.first_fit import first_fit
-from simulator.components.resource_management.maintenance.strategies.consolidation_aware import consolidation_aware
-from simulator.components.resource_management.maintenance.strategies.delay_aware import delay_aware
-from simulator.components.resource_management.maintenance.misc import show_metrics
+# General-purpose Simulator Modules
+from simulator.simulator import Simulator
+from simulator.misc.constants import SEED_VALUE
 
-def main():
-    # Loading the dataset from a JSON file. Currently available options:
-    # 'data/input.json'
-    # 'data/paper_example.json'
-    # 'data/dataset_occupation-25.json'
-    # 'data/dataset_occupation-50.json'
-    # 'data/dataset_occupation-75.json'
-    dataset = 'data/dataset_occupation-25.json'
-    load_dataset(dataset, initial_placement=True)
 
-    # Maintenance data to be gathered during the simulation
-    maintenance_data = []
+def main(simulation_type, dataset, maintenance_strategy, output_file):
+    # Defining a seed value to enable reproducibility
+    random.seed(SEED_VALUE)
 
-    # Defines SimPy simulation environment
-    env = simpy.Environment(initial_time=0) # Tells SimPy to simulate as fast as possible
+    Simulator.create_environment(simulation_type=simulation_type)
+    Simulator.load_dataset(input_file=dataset)
+    Simulator.start(maintenance_strategy=maintenance_strategy)
+    Simulator.show_results(output_file=output_file)
 
-    # Specifies the maintenance strategy. Currently available options:
-    # i) best_fit
-    # ii) first_fit
-    # iii) worst_fit
-    # iv) consolidation_aware
-    # v) delay_aware
-    # vi) vulnerability_surface
-
-    # env.process(delay_aware(env, maintenance_data))
-    # env.process(consolidation_aware(env, maintenance_data))
-    env.process(vulnerability_surface(env, maintenance_data))
-
-    # Starts the simulation
-    env.run()
-
-    # Prints out the maintenance results and optionally stores metrics into an output CSV file
-    show_metrics(dataset, maintenance_data, output_file=None, verbose=True)
 
 if __name__ == '__main__':
-    main()
+    # Parsing named arguments from the command line
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--simulation-type', '-s', help='Type of simulation (e.g., as fast as possible OR wallclock speed)')
+    parser.add_argument('--dataset', '-d', help='Input file containing the dataset for the simulation')
+    parser.add_argument('--maintenance-strategy', '-m', help='Name of a valid data center maintenance strategy')
+    parser.add_argument('--output-file', '-o', help='Name of output file to store simulation metrics')
+    args = parser.parse_args()
+
+    # Calling the main method
+    main(simulation_type=args.simulation_type, dataset=args.dataset,
+        maintenance_strategy=args.maintenance_strategy, output_file=args.output_file)

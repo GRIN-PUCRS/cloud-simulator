@@ -1,3 +1,5 @@
+# edge-simulator
+
 ## Installation Guide
 
 We validated this guide in Ubuntu Desktop 20.04.1 LTS (5.4.0-45-generic x86_64 GNU/Linux). It is worth noting some commands below require a user account with sudo administrator privileges.
@@ -33,6 +35,9 @@ sudo apt install python3.8 python3.8-dev
 
 # Check out the Python installation
 python3 -V
+
+# Installs graphviz Linux package and other dependencies
+sudo apt install graphviz libgraphviz-dev pkg-config
 ```
 
 Once we have Python installed, we need to get pip3, a tool that allows us to install and manage Python packages. To do that, we run the following command:
@@ -44,13 +49,13 @@ sudo apt install -y python3-pip
 Once we have installed all dependencies, we can get the simulator from GitHub:
 ```{bash}
 # Cloning the repository
-git clone https://github.com/GRIN-PUCRS/cloud-simulator.git
+git clone https://github.com/GRIN-PUCRS/edge-simulator.git
 
 # Entering the simulator's directory
-cd cloud-simulator/
+cd edge-simulator/
 ```
 
-Before starting using the cloud-simulator, the last step consists of installing all Python dependencies the project uses to deliver its functionality. We can quickly get them all through the `requirements.txt` file:
+Before starting using the edge-simulator, the last step consists of installing all Python dependencies the project uses to deliver its functionality. We can quickly get them all through the `requirements.txt` file:
 
 ```{bash}
 pip3 install -r requirements.txt
@@ -58,24 +63,28 @@ pip3 install -r requirements.txt
 
 ## Using the Simulator
 
-To run the simulator, we can execute the following command from the simulator's root directory:
+To use the simulator, we just need to call main.py, passing some required arguments. Usually, we need to specify the following arguments:
+
+- **Simulation type:** tells which type of simulation we want to run, either 'normal' or 'real_time'. If we use the 'normal' option, the simulator walks through time steps as fast as possible. Conversely, using 'real_time' tells the simulator to walk through time steps based on wall-clock time. We inform a valid simulation type value (either 'normal' or 'real_time') using `--simulation-type` or `-s`.
+- **Dataset:** defines the input file used to create the simulation environment. Valid dataset values correspond to JSON file names in 'data' directory. We omit the '.json' extension while passing this option to the simulator. We inform the simulator which dataset we want to run using `--dataset` or `-d`.
+- **Maintenance Strategy:** informs the simulator which maintenance strategy we want to execute. Before calling a maintenance strategy, we need to ensure it is imported in 'simulator.py', pointing to a valid file in 'simulator/components/resource_management/maintenance'. We assign a maintenance strategy using `--maintenance-strategy` or `-m`.
+- **Output:** tells the simulator the name of a file it must create to store the simulation output. By default, the simulator creates an Excel spreadsheet file (using the 'xlsx' extension) with worksheets containing both 'overall' and 'by step' metrics. We define an output file using `--output-file` or `-o`.
+
+Specifying the arguments above, we can simulate multiple maintenance scenarios as shown below:
 
 ```{bash}
-python3 -B -m simulator
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="first_fit_like" -o="first_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="worst_fit_like" -o="worst_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="best_fit_like" -o="best_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="salus" -o="salus_50occupation"
+
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="first_fit_like" -o="first_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="worst_fit_like" -o="worst_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="best_fit_like" -o="best_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="salus" -o="salus_25occupation"
+
+python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="first_fit_like" -o="first_fit_like_75occupation"
+python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="worst_fit_like" -o="worst_fit_like_75occupation"
+python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="best_fit_like" -o="best_fit_like_75occupation"
+python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="salus" -o="salus_75occupation"
 ```
-
-To test different scenarios, we can modify the `main.py` file, choosing different input files (dataset = 'data/YOUR_INPUT_DATA.json') or different strategies (env.process(YOUR_STRATEGY(env, maintenance_data))).
-
-
-### TO-DO LIST
-
-- [ ] Adopt a code linter (standardized code within multiple collaborators)
-- [ ] Expand the LICENSE.md file
-- [ ] Implement tests
-- [ ] Implement exceptions
-- [ ] Implement examples
-- [ ] Populate the README.md files (suggestions below)
-    - Root: Introduction (Motivation and Goals), Arquitecture, Project Structure, Team, etc.
-    - simulator/: Summary (files in this level), Minimal example
-    - components/: In-depth explanation of the arquitecture
-    - components/[component_name]: In-depth explanation of the module and its components
