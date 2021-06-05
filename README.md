@@ -1,4 +1,4 @@
-# edge-simulator
+# cloud-simulator
 
 ## Installation Guide
 
