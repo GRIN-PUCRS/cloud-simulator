@@ -73,15 +73,15 @@ To use the simulator, we just need to call main.py, passing some required argume
 Specifying the arguments above, we can simulate multiple maintenance scenarios as shown below:
 
 ```{bash}
-python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="first_fit_like" -o="first_fit_like_50occupation"
-python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="worst_fit_like" -o="worst_fit_like_50occupation"
-python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="best_fit_like" -o="best_fit_like_50occupation"
-python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="salus" -o="salus_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="first_fit_like" -o="first_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="worst_fit_like" -o="worst_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="best_fit_like" -o="best_fit_like_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset25occupation" -m="salus" -o="salus_25occupation"
 
-python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="first_fit_like" -o="first_fit_like_25occupation"
-python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="worst_fit_like" -o="worst_fit_like_25occupation"
-python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="best_fit_like" -o="best_fit_like_25occupation"
-python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="salus" -o="salus_25occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="first_fit_like" -o="first_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="worst_fit_like" -o="worst_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="best_fit_like" -o="best_fit_like_50occupation"
+python3 -B -m simulator -s="normal" -d="dataset50occupation" -m="salus" -o="salus_50occupation"
 
 python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="first_fit_like" -o="first_fit_like_75occupation"
 python3 -B -m simulator -s="normal" -d="dataset75occupation" -m="worst_fit_like" -o="worst_fit_like_75occupation"
